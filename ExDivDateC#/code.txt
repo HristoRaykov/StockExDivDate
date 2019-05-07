@@ -1,0 +1,101 @@
+public void getData(ActionEvent actionEvent) {
+
+        ObservableList<Stock> stockDataTable = FXCollections.observableArrayList();
+        ObservableList<String> tickerData = FXCollections.observableArrayList (tickers.getText().trim().split(" "));
+        Document htmlDoc;
+
+        try {
+            for (int counter = 0; counter < tickerData.size(); counter++) {
+                htmlDoc = getHTML(tickerData.get(counter));
+                if (htmlDoc != null) {
+                    stockDataTable.add(new Stock(tickerData.get(counter),getExDivDate(htmlDoc).trim(),getDividendAmount(htmlDoc).trim()));
+                }else{
+                    stockDataTable.add(new Stock(tickerData.get(counter),"No Data","No Data"));
+                }
+
+
+
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        colTicker.setCellValueFactory(cellData -> cellData.getValue().tickerProperty());
+        colExDivDate.setCellValueFactory(cellData -> cellData.getValue().exDivDateProperty());
+        colDividend.setCellValueFactory(cellData -> cellData.getValue().dividendPropety());
+        stockTable.setItems(stockDataTable);
+
+}
+
+
+
+        private static HtmlDocument getHTML(String ticker)
+        {
+            String url;
+
+            if (ticker.Contains("p"))
+            {
+                url = "https://eresearch.fidelity.com/eresearch/evaluate/quote.jhtml?symbols="
+                        + ticker.Split('p')[0] + "%2FP" + ticker.Split('p')[1];
+            }
+            else
+            {
+                url = "https://screener.fidelity.com/ftgw/etf/goto/snapshot/quote.jhtml?symbols=" + ticker;
+            }
+            HtmlWeb web = new HtmlWeb();
+            return web.Load(url);
+        }
+
+        private static String getExDivDate(HtmlDocument doc)
+        {
+
+            HtmlNode node = null;
+
+            Boolean isPref = doc.DocumentNode.SelectSingleNode("//th[text() ='Ex-Dividend Date']") != null;
+            Boolean isFund = doc.DocumentNode.SelectSingleNode("//th[text() ='Ex-Date ']") != null;
+
+            if (isPref)
+            {
+                node = doc.DocumentNode.SelectSingleNode("//th[text() ='Ex-Dividend Date']").NextSibling.NextSibling;
+            }
+            else if (isFund)
+            {
+                node = doc.DocumentNode.SelectSingleNode("//th[text() ='Ex-Date ']").NextSibling.NextSibling;
+            }
+
+            if (node != null)
+            {
+                return node.InnerText;
+            }
+            else
+            {
+                return "No data";
+            }
+        }
+
+        private static String getDividendAmount(HtmlDocument doc)
+        {
+
+            HtmlNode node = null;
+
+            Boolean isPref = doc.DocumentNode.SelectSingleNode("//th[text() ='Dividend']") != null;
+            Boolean isFund = doc.DocumentNode.SelectSingleNode("//th[text() ='Most Recent Distribution ']") != null;
+
+            if (isPref)
+            {
+                node = doc.DocumentNode.SelectSingleNode("//th[text() ='Dividend']").NextSibling.NextSibling;
+            }
+            else if (isFund)
+            {
+                node = doc.DocumentNode.SelectSingleNode("//th[text() ='Most Recent Distribution ']").NextSibling.NextSibling;
+            }
+
+            if (node != null)
+            {
+                return node.InnerText;
+            }
+            else
+            {
+                return "No data";
+            }
+        }
